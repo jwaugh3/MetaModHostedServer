@@ -5,15 +5,17 @@ const { Users, ChannelPointRewards } = require('../models/dbModels');
 const jwt = require('jsonwebtoken');
 const eventSubHandler = require('../eventSub/eventSub')
 const { twitchBotSetup } = require('../twitchBot/twitchBot')
-const { getChannelMods } = require('../twitchBot/twitchUtility')
+const { getChannelMods } = require('../twitchBot/twitchBot')
+const { optsArrayHandler } = require('../twitchBot/twitchBot')
 require('dotenv').config()
 
 
 TWITCH_AUTH_REDIRECT_URI = 'http://localhost:5000/auth/redirected'
-LOGGED_IN_URI = 'http://localhost:3001/authenticate'
+LOGGED_IN_URI = 'http://localhost:3001/authorize'
 
 //handles redirect user to twitch's authentication login
 router.get('/login', (req, res) => {
+	console.log('first')
 	res.redirect(
 		'https://id.twitch.tv/oauth2/authorize?' +
 			queryString.stringify({
@@ -52,6 +54,7 @@ router.get('/redirected', (req, res) => {
       };
 
 	request(options, (err, result, body) => {
+		console.log('hit here')
 		let bodyObject = JSON.parse(body)
 		var accessToken = bodyObject.access_token
 		var refreshToken = bodyObject.refresh_token;
@@ -77,12 +80,13 @@ router.get('/redirected', (req, res) => {
 
 				if (existingUser) {
 					//user exists
+					console.log(existingUser)
 					console.log('existing user:', existingUser.display_name);
 
 					getChannelMods(twitch_ID, accessToken)
 
 					let newToken = await new Promise((resolve, reject) => {
-						Users.findOneAndUpdate({twitch_ID}, {last_sign_in: new Date()}, {new: true, useFindAndModify: false})
+						Users.findOneAndUpdate({twitch_ID}, {refresh_token: refreshToken,last_sign_in: new Date()}, {new: true, useFindAndModify: false})
 						.then(async (res)=>{
 							if(res.error){reject('error')}
 							let token = await generateNewAccessToken(res.refresh_token)
@@ -116,16 +120,18 @@ router.get('/redirected', (req, res) => {
 						created_on: new Date()
 					})
 						.save() 
-						.then((newUser) => {
+						.then(async (newUser) => {
                             console.log('new user created: ' + newUser.twitch_ID);
 
 							//setup event Sub for new user
 							eventSubHandler(newUser.twitch_ID, 'create', 'channel.channel_points_custom_reward_redemption.add')
 
-							twitchBotSetup(newUser.login_username, accessToken)
-
 							//get channel moderators
-							getChannelMods(twitch_ID, accessToken)
+							await getChannelMods(twitch_ID, accessToken)
+
+							await twitchBotSetup(newUser.login_username, accessToken)
+
+							// await customTwitchBotSetup(newUser.login_username, '4tw1v563eyc5760b0yoill7hdr9awl')
 
 							//create channel_point_rewards
 							new ChannelPointRewards({

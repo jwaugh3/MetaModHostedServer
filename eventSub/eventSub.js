@@ -10,7 +10,7 @@ const app = express();
 
 const clientID = process.env.TWITCH_CLIENT_ID
 const clientSecret = process.env.TWITCH_CLIENT_SECRET
-const callbackURL = 'https://894b92ec0a05.ngrok.io'
+const callbackURL = 'https://f772a0589b54.ngrok.io'
 
 
 

@@ -1,6 +1,7 @@
-const { ChannelPointRewards } = require("../../models/dbModels")
-const { optsArrayHandler } = require('../../twitchBot/twitchBot')
-
+const request = require("request")
+const { ChannelPointRewards, TwitchViewers } = require("../../models/dbModels")
+const { optsArrayHandler, customOptsArrayHandler } = require('../../twitchBot/twitchBot')
+const { setDiscordRank } = require('../../discord/discordManager')
 const rewardRedemptionHandler = async (event) => {
 console.log(event, 'event')
 
@@ -13,6 +14,7 @@ console.log(event, 'event')
 
     console.log(redeemedReward)
 
+//Giveaway Redemption
     if(redeemedReward.reward_type === 'giveaway'){
 
         let currentRedemptions = redeemedReward.redemptions
@@ -30,7 +32,7 @@ console.log(event, 'event')
         })
     }
 
-
+//VIP Redemption
     if(redeemedReward.reward_type === 'vip'){
 
         let currentRedemptions = redeemedReward.timedRedemptions
@@ -42,7 +44,6 @@ console.log(event, 'event')
         .then((result)=>{
             console.log(result)
             if(result){
-                console.log('ran in here')
                 //if successful
                 let userOpts = optsArrayHandler('get', event.broadcaster_user_login)
                 let command = '/vip ' + event.user_login 
@@ -55,7 +56,156 @@ console.log(event, 'event')
         })
     }
 
+//Timeout Redemption
+    if(redeemedReward.reward_type === 'timeout'){
 
+        var options = {
+            url: `https://tmi.twitch.tv/group/user/${event.broadcaster_user_login}/chatters`
+        };
+
+        // gets all custom rewards
+        let allUsers = await new Promise((resolve, reject)=>{
+            request(options, (error, response)=>{   
+               resolve(JSON.parse(response.body))
+            })
+        })
+        
+        let userTypes = JSON.parse(redeemedReward.reward_settings).eligible
+        let numberOfChatters = JSON.parse(redeemedReward.reward_settings).numberOfChatters
+        userTypes = userTypes.map((x)=>{return x.toLowerCase()})
+        if(userTypes.includes('mods')){
+            let modIndex = userTypes.findIndex((x)=>x === 'Mods')
+            userTypes[modIndex] = 'moderators'
+        }
+        let timeoutLength = JSON.parse(redeemedReward.reward_settings).timeoutLength
+
+        let userPool = []
+        for(let key in allUsers.chatters){
+            if(userTypes.includes(key)){
+                userPool.push(...allUsers.chatters[key])
+            }
+        }
+        let selectedUsers = []
+
+        let userOpts = optsArrayHandler('get', event.broadcaster_user_login)
+
+        for(let y=0; (y< numberOfChatters) && (y < userPool.length); y++){
+            let user = userPool[Math.floor(Math.random() * userPool.length)]
+            selectedUsers.push(user)
+            let command = '/timeout ' + user + ' ' + timeoutLength + 's'
+            userOpts.client.say(userOpts.opts.identity.username, command)
+        }
+
+        let confirmCommand = event.user_name + ' has redeemed "' + event.reward.title + '" and has timed out ' + selectedUsers + ' for ' + timeoutLength + 's'
+        userOpts.client.say(userOpts.opts.identity.username, confirmCommand)
+    }
+
+//Discord Rank Redemption
+    if(redeemedReward.reward_type === 'discordRank'){
+        TwitchViewers.findOne({twitch_username: event.user_login.toLowerCase()}).then((existingUser)=>{
+            let rewardSettings = JSON.parse(redeemedReward.reward_settings)
+            let rankNames = rewardSettings.rankNames
+            let rankColors = rewardSettings.rankColors
+            let rankIDs = rewardSettings.rankIDs
+            let serverName = rewardSettings.serverName
+            let serverID = rewardSettings.serverID
+            let ownerLogin = rewardSettings.ownerLogin
+            let ownerID = rewardSettings.ownerID
+            let discriminator = rewardSettings.discriminator
+
+            if(existingUser){
+                let rankSettings = existingUser.rank.find((x)=>x.rewardID === event.reward.id)
+                //check if they already are ranked for this reward id
+                //if ranked already, then rank up and update rank in discord
+                if(rankSettings){
+                    let currentRankIndex = rewardSettings.rankNames.indexOf(rankSettings.rankName)
+                    let newRankIndex = currentRankIndex + 1
+                    let newRankName = rewardSettings.rankNames[newRankIndex]
+                    let newRankColor = rewardSettings.rankColors[newRankIndex]
+
+                    if(newRankName){
+                        TwitchViewers.findOneAndUpdate({ twitch_username: event.user_login.toLowerCase(), 'rank.rewardID': event.reward.id }, //store username of redeemers
+                            {'$set' : {'rank.$.rankName' : newRankName, 'rank.$.rankColor' : newRankColor}}, 
+                            {new: true, useFindAndModify: false})
+                        .then((result)=>{
+                            console.log(result)
+                            //if highest rank, tell in chat
+                            //otherwise tell current rank
+                            let rankSettings = result.rank.find((x)=> x.channel === event.broadcaster_user_login)
+                            console.log(rankSettings)
+                            if(rankSettings.rankName === rewardSettings.rankNames[rewardSettings.rankNames.length - 1]){
+                                let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
+                                let command = '@' + event.user_login + ' You are now the highest rank possible in Discord. Congrats! Enjoy the clout!'
+                                userOpts.client.say(event.broadcaster_user_login, command)
+                            } else {
+                                let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
+                                let command = '@' + event.user_login + " You've ranked up in Discord! You are now ranked: " + rankSettings.rankName
+                                userOpts.client.say(event.broadcaster_user_login, command)
+                            }
+
+                            //give new rank
+                            setDiscordRank(rankSettings.serverID, result.discord_ID, rankSettings.rankName, rankNames[newRankIndex - 1])
+                        })
+                    } else {
+                        // say in chat that the user maxed out their discord ranking
+                        let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
+                        let command = '/me @' + event.user_login + ' you already maxed out your rank... You might want a refund.'
+                        userOpts.client.say(event.broadcaster_user_login, command)
+                    }
+                }
+                //if not ranked, add rank details and then rank up in discord
+                else { 
+                    TwitchViewers.findOneAndUpdate({ twitch_username: event.user_login.toLowerCase() }, 
+                    {"$push" : { 
+                        'rank' : { 
+                            serverName,
+                            serverID,
+                            ownerLogin,
+                            discriminator,
+                            ownerID,
+                            channel: event.broadcaster_user_login,
+                            channelID: event.broadcaster_user_id,
+                            rewardID: event.reward.id,
+                            rankName: rankNames[0],
+                            rankColor: rankColors[0]
+                        }}},
+                    {new: true, useFindAndModify: false}).then((response)=>{
+                        let rankSettings = response.rank.find((x)=> x.channel === event.broadcaster_user_login)
+                        let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
+                        let command = '@' + event.user_login + ' Congrats! You have ranked up in Discord! You are now ranked: ' + rankNames[0]
+                        userOpts.client.say(event.broadcaster_user_login, command)
+                        setDiscordRank(rankSettings.serverID, response.discord_ID, rankSettings.rankName, null)
+                    })
+                }
+
+            } else {
+                //if user does not exist in db, create user
+                new TwitchViewers({
+                    twitch_ID: event.user_id,
+                    twitch_username: event.user_login.toLowerCase(),
+                    rank: [{
+                        serverName,
+                        serverID,
+                        ownerLogin,
+                        discriminator,
+                        ownerID,
+                        channel: event.broadcaster_user_login,
+                        channelID: event.broadcaster_user_id,
+                        rewardID: event.reward.id,
+                        rankName: rankNames[0],
+                        rankColor: rankColors[0]
+                    }]
+                }).save()
+
+                //send message in chat telling them where to connect their account
+                let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
+                console.log(userOpts)
+                let command = '@' + event.user_login + ' visit https://metamoderation.com/connect?' + event.user_login + ' to connect your discord account and gain your new Discord Rank!'
+                userOpts.client.say(event.broadcaster_user_login, command)
+                
+            }
+        })
+    }
 }
 
 

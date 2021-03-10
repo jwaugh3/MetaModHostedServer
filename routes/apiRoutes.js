@@ -2,7 +2,7 @@ const router = require('express').Router();
 const request = require('request');
 const jwt = require('jsonwebtoken');
 const verifyToken = require('../jwt/jwt');
-const { Users, FleamarketbotSettings } = require('../models/dbModels');
+const { Users, FleamarketbotSettings, TwitchViewers } = require('../models/dbModels');
 const bodyParser = require('body-parser');
 var jsonParser = bodyParser.json()
 const { modifyUsersArray, getUsersArray, client } = require('../apps/fleamarketbot/variables')
@@ -107,6 +107,28 @@ router.post('/updateChannel/:token', jsonParser, verifyToken, (req, res) => {
   })
 })
 
+
+router.post('/connection', jsonParser, (req, res) => {
+
+  TwitchViewers.findOneAndUpdate({ twitch_ID: req.body.data.twitchID }, 
+      {
+        discord_ID: req.body.data.discordID, 
+        discord_username: req.body.data.discordLogin, 
+        discord_discriminator: req.body.data.discordDiscriminator}, 
+        {new: true, useFindAndModify: false}).then((result)=>{
+          console.log(result)
+    if(result){
+      res.json(result)
+    }
+  })
+
+})
+
+router.get('/getUser/:username', (req, res) => {       
+  TwitchViewers.findOne({twitch_username: req.params.username}).then((result)=>{
+    res.json(result)
+  })
+})
 
 
 

@@ -2,8 +2,10 @@ const mongoose = require('mongoose');
 const express = require('express');
 const cors = require('cors');
 const { authRoutes } = require('./routes/authRoutes');
+const { connectRoutes } = require('./routes/connectRoutes')
 const { apiRoutes } = require('./routes/apiRoutes');
-const twitchBot = require('./twitchBot/twitchBot')
+const twitchBot = require('./twitchBot/twitchBot');
+const discordManager = require('./discord/discordManager')
 // const { patreonRoutes } = require('./routes/patreonRoutes');
 // const fleamarketbot = require('./apps/fleamarketbot/fleamarketbot');
 // const fleamarketbotSetup = require('./apps/fleamarketbot/fleamarketbotSetup');
@@ -11,14 +13,15 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json()
 const eventSubHandler = require('./eventSub/eventSub')
 const { channelPointsManagerRoutes } = require('./routes/appsAPI/channelPointsManagerRoutes');
-const { twitchBotRestart } = require('./twitchBot/twitchUtility')
+const { twitchBotRestart, customTwitchBotRestart } = require('./twitchBot/twitchBot')
 require('dotenv').config()
 
-// eventSubHandler('30978675', 'delete', null) //for testing purposes
-// eventSubHandler('30978675', 'create', 'channel.channel_points_custom_reward_redemption.add') //for testing purposes 
-// eventSubHandler(null, 'get', null)
+//   eventSubHandler('30978675', 'delete', null) //for testing purposes
+//  eventSubHandler('30978675', 'create', 'channel.channel_points_custom_reward_redemption.add') //for testing purposes 
+ eventSubHandler(null, 'get', null)
 
 twitchBotRestart()
+customTwitchBotRestart()
 
 //server setup
 const app = express();
@@ -44,6 +47,7 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
 
 //authorization route
 app.use('/auth', authRoutes);
+app.use('/connect', connectRoutes)
 // app.use('/patreon', patreonRoutes)
 app.use('/api', apiRoutes)
 app.use('/channelPointsManager', channelPointsManagerRoutes)

@@ -70,11 +70,23 @@ const ChannelPointRewardsSchema = new Schema({
 
 const ChannelPointRewards = mongoose.model('channel_point_rewards', ChannelPointRewardsSchema)
 
+const TwitchViewersSchema = new Schema({
+    twitch_ID: String,
+    twitch_username: String,
+    discord_ID: String,
+    discord_username: String,
+    discord_discriminator: String,
+    rank: [{}]
+})
+
+const TwitchViewers = mongoose.model('twitch_viewers', TwitchViewersSchema)
+
 module.exports = {
     Users,
     UserSettings,
     Items,
     PatreonUsers,
     FleamarketbotSettings,
-    ChannelPointRewards
+    ChannelPointRewards,
+    TwitchViewers
 }

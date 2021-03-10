@@ -6,6 +6,7 @@ var jsonParser = bodyParser.json()
 const { Users, ChannelPointRewards } = require('../../models/dbModels');
 const verifyToken = require('../../jwt/jwt');
 const rewardRedemptionHandler = require('../../apps/channelPointsManger/rewardRedemptionHandler')
+const { createDiscordRoles, deleteDiscordRoles } = require('../../discord/discordManager')
 require('dotenv').config()
 
 router.get('/verifyJWT/:token', verifyToken, (req, res) => {
@@ -76,6 +77,9 @@ router.post('/event', jsonParser, (req, res)=>{
             let customSettings = req.body.settings
             customSettings.rewardID = newReward.data[0].id
 
+            if(customSettings.rewardType === 'discordRank'){
+                createDiscordRoles(JSON.parse(customSettings.settings))
+            }
 
             ChannelPointRewards.findOneAndUpdate({ channel: req.body.channel }, 
                 {"$push" : { 
@@ -136,12 +140,13 @@ router.post('/deleteCustomReward', jsonParser, (req, res)=>{
             'custom_rewards' : { 
                 'reward_id': req.body.id, 
             }}}, 
-        {new: true, useFindAndModify: false})
-    .then((existingUser)=>{
-        if(existingUser){
-           
-            
-
+        {new: false, useFindAndModify: false})
+    .then((response)=>{
+        if(response){
+            let rewardIndex = response.custom_rewards.findIndex((x)=> x.reward_id === req.body.id)
+            if(response.custom_rewards[rewardIndex].reward_type === 'discordRank'){
+                deleteDiscordRoles(JSON.parse(response.custom_rewards[rewardIndex].reward_settings))
+            }
         } else {
             console.log('createCustomRewards Api endpoint errored out when getting user from db')
         }
@@ -191,7 +196,7 @@ router.post('/updateCustomReward', jsonParser, (req, res)=>{
             };
 
             var dataString = JSON.stringify(req.body.data);
-            
+            console.log(dataString)
             var options = {
                 url: `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${existingUser.twitch_ID}&id=${req.body.rewardID}`,
                 method: 'PATCH',
@@ -203,6 +208,7 @@ router.post('/updateCustomReward', jsonParser, (req, res)=>{
                 
                 request(options, (error, response)=>{
                     if (!JSON.parse(response.body).error) {
+                        console.log(response.body)
                         resolve(response.body)
                     } else {
                         resolve(JSON.parse(response.body))
@@ -224,7 +230,7 @@ router.post('/updateCustomReward', jsonParser, (req, res)=>{
                     })
                 })
             }
-console.log(updateStatus)
+
             res.json({twitchStatus: updatedTwitchStatus, updateStatus})
 
         } else {
