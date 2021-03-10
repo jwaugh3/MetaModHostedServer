@@ -10,8 +10,8 @@ const { optsArrayHandler } = require('../twitchBot/twitchBot')
 require('dotenv').config()
 
 
-TWITCH_AUTH_REDIRECT_URI = 'http://localhost:5000/auth/redirected'
-LOGGED_IN_URI = 'http://localhost:3001/authorize'
+TWITCH_AUTH_REDIRECT_URI = 'http://api.metamoderation.com/auth/redirected'
+LOGGED_IN_URI = 'http://metamoderation.com/authorize'
 
 //handles redirect user to twitch's authentication login
 router.get('/login', (req, res) => {
