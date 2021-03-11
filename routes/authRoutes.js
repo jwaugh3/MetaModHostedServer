@@ -9,9 +9,11 @@ const { getChannelMods } = require('../twitchBot/twitchBot')
 const { optsArrayHandler } = require('../twitchBot/twitchBot')
 require('dotenv').config()
 
+baseURL = 'http://localhost:5000'
+frontURL = 'http://localhost:3001'
 
-TWITCH_AUTH_REDIRECT_URI = 'http://api.metamoderation.com/auth/redirected'
-LOGGED_IN_URI = 'http://metamoderation.com/authorize'
+TWITCH_AUTH_REDIRECT_URI = baseURL + '/auth/redirected'
+LOGGED_IN_URI = frontURL + '/authorize'
 
 //handles redirect user to twitch's authentication login
 router.get('/login', (req, res) => {

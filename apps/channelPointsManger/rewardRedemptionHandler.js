@@ -2,6 +2,7 @@ const request = require("request")
 const { ChannelPointRewards, TwitchViewers } = require("../../models/dbModels")
 const { optsArrayHandler, customOptsArrayHandler } = require('../../twitchBot/twitchBot')
 const { setDiscordRank } = require('../../discord/discordManager')
+
 const rewardRedemptionHandler = async (event) => {
 console.log(event, 'event')
 
@@ -25,7 +26,7 @@ console.log(event, 'event')
             {new: true, useFindAndModify: false})
         .then((result)=>{
             if(result){
-            //    res.json({response: newReward.data[0]})
+            
             } else {
                 console.log('createCustomRewards Api endpoint errored out when getting user from db')
             }
@@ -73,10 +74,8 @@ console.log(event, 'event')
         let userTypes = JSON.parse(redeemedReward.reward_settings).eligible
         let numberOfChatters = JSON.parse(redeemedReward.reward_settings).numberOfChatters
         userTypes = userTypes.map((x)=>{return x.toLowerCase()})
-        if(userTypes.includes('mods')){
-            let modIndex = userTypes.findIndex((x)=>x === 'Mods')
-            userTypes[modIndex] = 'moderators'
-        }
+        allUsers.chatters['mods'] = allUsers.chatters['moderators'] //rename response from moderators to mods to match application
+        delete allUsers.chatters['moderators']
         let timeoutLength = JSON.parse(redeemedReward.reward_settings).timeoutLength
 
         let userPool = []
@@ -85,19 +84,36 @@ console.log(event, 'event')
                 userPool.push(...allUsers.chatters[key])
             }
         }
+        console.log(allUsers, userPool)
         let selectedUsers = []
 
-        let userOpts = optsArrayHandler('get', event.broadcaster_user_login)
+        let metaBotOpts = customOptsArrayHandler('get')
 
-        for(let y=0; (y< numberOfChatters) && (y < userPool.length); y++){
-            let user = userPool[Math.floor(Math.random() * userPool.length)]
+        for(let y=0; (y < numberOfChatters); y++){
+            let randomIndex = Math.floor(Math.random() * userPool.length)
+            let user = userPool[randomIndex]
+            console.log(user)
             selectedUsers.push(user)
+            userPool.splice(randomIndex, 1)
             let command = '/timeout ' + user + ' ' + timeoutLength + 's'
-            userOpts.client.say(userOpts.opts.identity.username, command)
+            metaBotOpts.client.say(event.broadcaster_user_login, command)
+            console.log(userPool)
         }
 
-        let confirmCommand = event.user_name + ' has redeemed "' + event.reward.title + '" and has timed out ' + selectedUsers + ' for ' + timeoutLength + 's'
-        userOpts.client.say(userOpts.opts.identity.username, confirmCommand)
+        let resultList
+
+        if(selectedUsers.length > 2){
+            let listedUsers = selectedUsers
+            let last = listedUsers.pop()
+            resultList = listedUsers.join(', ') + ' and ' + last
+        } else if(selectedUsers.length === 2){
+            resultList = selectedUsers[0] + ' and ' + selectedUsers[1]
+        } else {
+            resultList = selectedUsers
+        }
+
+        let confirmCommand = event.user_name + ' has redeemed "' + event.reward.title + '" and has timed out ' + resultList + ' for ' + timeoutLength + 's'
+        metaBotOpts.client.say(event.broadcaster_user_login, confirmCommand)
     }
 
 //Discord Rank Redemption

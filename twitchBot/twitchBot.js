@@ -109,7 +109,7 @@ const customTwitchBotSetup = async (channel, accessToken) =>{
     customOptsArray = {opts, client}
 }
 
-const customOptsArrayHandler = (action, channel) => {
+const customOptsArrayHandler = (action) => {
     if(action === 'get'){
         return customOptsArray
     }

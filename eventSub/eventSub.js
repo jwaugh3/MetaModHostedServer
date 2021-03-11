@@ -10,7 +10,7 @@ const app = express();
 
 const clientID = process.env.TWITCH_CLIENT_ID
 const clientSecret = process.env.TWITCH_CLIENT_SECRET
-const callbackURL = 'https://api.metamoderation.com'
+const callbackURL = 'https://7cf762082423.ngrok.io'
 
 
 

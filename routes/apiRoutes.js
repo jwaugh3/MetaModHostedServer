@@ -5,7 +5,8 @@ const verifyToken = require('../jwt/jwt');
 const { Users, FleamarketbotSettings, TwitchViewers } = require('../models/dbModels');
 const bodyParser = require('body-parser');
 var jsonParser = bodyParser.json()
-const { modifyUsersArray, getUsersArray, client } = require('../apps/fleamarketbot/variables')
+const { modifyUsersArray, getUsersArray, client } = require('../apps/fleamarketbot/variables');
+const { setDiscordRank } = require('../discord/discordManager');
 
 require('dotenv').config()
 
@@ -111,15 +112,23 @@ router.post('/updateChannel/:token', jsonParser, verifyToken, (req, res) => {
 router.post('/connection', jsonParser, (req, res) => {
 
   TwitchViewers.findOneAndUpdate({ twitch_ID: req.body.data.twitchID }, 
-      {
-        discord_ID: req.body.data.discordID, 
-        discord_username: req.body.data.discordLogin, 
-        discord_discriminator: req.body.data.discordDiscriminator}, 
-        {new: true, useFindAndModify: false}).then((result)=>{
-          console.log(result)
-    if(result){
-      res.json(result)
-    }
+    {
+      discord_ID: req.body.data.discordID, 
+      discord_username: req.body.data.discordLogin, 
+      discord_discriminator: req.body.data.discordDiscriminator
+    }, 
+    {new: true, useFindAndModify: false}).then((result)=>{
+        console.log(result)
+        if(result){
+          
+          if(result.rank.length > 0){
+            result.rank.forEach((rank)=>{
+              setDiscordRank(rank.serverID, result.discord_ID, rank.rankName, null)
+            })
+          }
+
+          res.json(result)
+        }
   })
 
 })

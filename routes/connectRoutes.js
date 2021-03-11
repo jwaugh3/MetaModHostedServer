@@ -7,9 +7,11 @@ const eventSubHandler = require('../eventSub/eventSub')
 const { twitchBotSetup, getChannelMods } = require('../twitchBot/twitchBot')
 require('dotenv').config()
 
+baseURL = 'http://localhost:5000'
+frontURL = 'http://localhost:3001'
 
-TWITCH_AUTH_CONNECT_REDIRECT_URI = 'http://api.metamoderation.com/connect/twitchRedirected'
-LOGGED_IN_URI = 'http://metamoderation.com/authorize'
+TWITCH_AUTH_CONNECT_REDIRECT_URI = baseURL + '/connect/twitchRedirected'
+LOGGED_IN_URI = frontURL + '/authorize'
 
 //handles redirect user to twitch's authentication login
 router.get('/twitch', (req, res) => {
@@ -100,7 +102,7 @@ router.get('/twitchRedirected', (req, res) => {
 });
 
 
-DISCORD_AUTH_REDIRECT_URI = 'http://api.metamoderation.com/connect/discordRedirected'
+DISCORD_AUTH_REDIRECT_URI = baseURL + '/connect/discordRedirected'
 
 //handles redirect user to twitch's authentication login
 router.get('/discord', (req, res) => {
@@ -166,7 +168,7 @@ router.get('/discordRedirected', (req, res) => {
 	});
 });
 
-DISCORD_BOT_REDIRECT_URI = 'http://api.metamoderation.com/connect/discordBotRedirected'
+DISCORD_BOT_REDIRECT_URI = baseURL + '/connect/discordBotRedirected'
 
 //handles redirect user to twitch's authentication login
 router.get('/discordBot', (req, res) => {

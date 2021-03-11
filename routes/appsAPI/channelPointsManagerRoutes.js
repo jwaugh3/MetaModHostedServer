@@ -66,6 +66,7 @@ router.post('/event', jsonParser, (req, res)=>{
                     let data = JSON.parse(response.body)
                     if (!data.error) {
                         console.log(data)
+                        console.log(data.data[0].max_per_stream_setting, data.data[0].max_per_user_per_stream_setting)
                         resolve(data)
                     } else {
                         console.log(data.error, 'error here')
@@ -256,7 +257,8 @@ router.get('/getRewardEntries/:channel/:rewardID', (req, res)=>{
         ChannelPointRewards.findOne({ channel: req.params.channel, 'custom_rewards.reward_id': req.params.rewardID}, {_id: 0, __v: false}).then((existingReward)=>{
             if(existingReward){
                 console.log(existingReward)
-                res.json({rewardID: existingReward.custom_rewards[0].reward_id, userEntries: existingReward.custom_rewards[0].redemptions})
+                let rewardIndex = existingReward.custom_rewards.findIndex((x)=>x.reward_id === req.params.rewardID)
+                res.json({rewardID: existingReward.custom_rewards[rewardIndex].reward_id, userEntries: existingReward.custom_rewards[rewardIndex].redemptions})
             } else {
                 console.log('getRewardSettings Api endpoint errored out when getting user from db')
             }
