@@ -3,7 +3,7 @@ const request = require('request');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 var jsonParser = bodyParser.json()
-const { Users, ChannelPointRewards } = require('../../models/dbModels');
+const { Users, ChannelPointRewards, TwitchViewers } = require('../../models/dbModels');
 const verifyToken = require('../../jwt/jwt');
 const rewardRedemptionHandler = require('../../apps/channelPointsManger/rewardRedemptionHandler')
 const { createDiscordRoles, deleteDiscordRoles } = require('../../discord/discordManager')
@@ -147,11 +147,24 @@ router.post('/deleteCustomReward', jsonParser, (req, res)=>{
             let rewardIndex = response.custom_rewards.findIndex((x)=> x.reward_id === req.body.id)
             if(response.custom_rewards[rewardIndex].reward_type === 'discordRank'){
                 deleteDiscordRoles(JSON.parse(response.custom_rewards[rewardIndex].reward_settings))
+
+                TwitchViewers.updateMany({'rank.rewardID': req.body.id},
+                {"$pull" : { 
+                    'rank' : { 
+                        'rewardID': req.body.id, 
+                    }}},
+                    {new: true, useFindAndModify: false}
+                )
+                .then((result)=>{
+                    console.log(result)
+                })
             }
         } else {
             console.log('createCustomRewards Api endpoint errored out when getting user from db')
         }
     })
+
+    
     
 })
 

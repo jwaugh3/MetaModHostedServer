@@ -56,7 +56,6 @@ router.get('/twitchRedirected', (req, res) => {
 		let bodyObject = JSON.parse(body)
 		var accessToken = bodyObject.access_token
 		var refreshToken = bodyObject.refresh_token;
-		// console.log(accessToken)
 
 		var headers = {
 			'Authorization': 'Bearer ' + accessToken,
@@ -163,7 +162,7 @@ router.get('/discordRedirected', (req, res) => {
 			let userObject = JSON.parse(body)			
 						
 
-			res.redirect(LOGGED_IN_URI + '?discordID=' + userObject.id + '&discordLogin=' + userObject.username + '&discriminator=' + userObject.discriminator)
+			res.redirect(LOGGED_IN_URI + '?discordID=' + userObject.id + '&discordLogin=' + userObject.username + '&discriminator=' + userObject.discriminator + '&token=' + accessToken)
 		}); 
 	});
 });
@@ -180,7 +179,7 @@ router.get('/discordBot', (req, res) => {
                 response_type: 'code',
 				scope: 'bot identify messages.read guilds.join',
                 state: process.env.TWITCH_AUTH_STATE,
-				permissions: '8'
+				permissions: '268437633'
 			})
 	);
 });
@@ -205,7 +204,7 @@ router.get('/discordBotRedirected', (req, res) => {
 			code: code,
 			redirect_uri: DISCORD_BOT_REDIRECT_URI,
 			scope: 'bot identify messages.read guilds.join',
-			permissions: '8'
+			permissions: '268437633'
 		},
 		headers: headers
 	}

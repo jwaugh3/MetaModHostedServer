@@ -1,7 +1,7 @@
 const request = require("request")
 const { ChannelPointRewards, TwitchViewers } = require("../../models/dbModels")
 const { optsArrayHandler, customOptsArrayHandler } = require('../../twitchBot/twitchBot')
-const { setDiscordRank } = require('../../discord/discordManager')
+const { setDiscordRank, checkGuildForUser } = require('../../discord/discordManager')
 
 const rewardRedemptionHandler = async (event) => {
 console.log(event, 'event')
@@ -92,12 +92,10 @@ console.log(event, 'event')
         for(let y=0; (y < numberOfChatters); y++){
             let randomIndex = Math.floor(Math.random() * userPool.length)
             let user = userPool[randomIndex]
-            console.log(user)
             selectedUsers.push(user)
             userPool.splice(randomIndex, 1)
             let command = '/timeout ' + user + ' ' + timeoutLength + 's'
             metaBotOpts.client.say(event.broadcaster_user_login, command)
-            console.log(userPool)
         }
 
         let resultList
@@ -120,6 +118,7 @@ console.log(event, 'event')
     if(redeemedReward.reward_type === 'discordRank'){
         TwitchViewers.findOne({twitch_username: event.user_login.toLowerCase()}).then((existingUser)=>{
             let rewardSettings = JSON.parse(redeemedReward.reward_settings)
+            console.log(rewardSettings, 'rewardSettings')
             let rankNames = rewardSettings.rankNames
             let rankColors = rewardSettings.rankColors
             let rankIDs = rewardSettings.rankIDs
@@ -129,25 +128,29 @@ console.log(event, 'event')
             let ownerID = rewardSettings.ownerID
             let discriminator = rewardSettings.discriminator
 
+            
+
             if(existingUser){
                 let rankSettings = existingUser.rank.find((x)=>x.rewardID === event.reward.id)
+                console.log(rankSettings, 'ranksettings')
                 //check if they already are ranked for this reward id
                 //if ranked already, then rank up and update rank in discord
-                if(rankSettings){
+                if(rankSettings){ //if rank already exists
                     let currentRankIndex = rewardSettings.rankNames.indexOf(rankSettings.rankName)
+                    console.log(currentRankIndex)
                     let newRankIndex = currentRankIndex + 1
                     let newRankName = rewardSettings.rankNames[newRankIndex]
                     let newRankColor = rewardSettings.rankColors[newRankIndex]
 
-                    if(newRankName){
-                        TwitchViewers.findOneAndUpdate({ twitch_username: event.user_login.toLowerCase(), 'rank.rewardID': event.reward.id }, //store username of redeemers
+                    if(newRankName){ //if rank exists and next rank available, then rank up
+                        TwitchViewers.findOneAndUpdate({ twitch_username: event.user_login.toLowerCase(), 'rank.rewardID': event.reward.id }, 
                             {'$set' : {'rank.$.rankName' : newRankName, 'rank.$.rankColor' : newRankColor}}, 
                             {new: true, useFindAndModify: false})
-                        .then((result)=>{
+                        .then(async(result)=>{
                             console.log(result)
                             //if highest rank, tell in chat
                             //otherwise tell current rank
-                            let rankSettings = result.rank.find((x)=> x.channel === event.broadcaster_user_login)
+                            let rankSettings = result.rank.find((x)=> x.rewardID === event.reward.id)
                             console.log(rankSettings)
                             if(rankSettings.rankName === rewardSettings.rankNames[rewardSettings.rankNames.length - 1]){
                                 let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
@@ -159,10 +162,18 @@ console.log(event, 'event')
                                 userOpts.client.say(event.broadcaster_user_login, command)
                             }
 
-                            //give new rank
-                            setDiscordRank(rankSettings.serverID, result.discord_ID, rankSettings.rankName, rankNames[newRankIndex - 1])
+                            //check for user in server
+                            let userCheck = await checkGuildForUser(rankSettings.serverID, result.discord_ID)
+                            if(!userCheck){//if user is not in server, tell them to join server to gain rank
+                                let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
+                                let command = '@' + event.user_login + " Join the discord server ("+ rankSettings.serverName +") to gain your new rank."
+                                userOpts.client.say(event.broadcaster_user_login, command)
+                            } else {
+                                //give new rank
+                                setDiscordRank(rankSettings.serverID, result.discord_ID, rankSettings.rankName, rankNames[newRankIndex - 1])
+                            }
                         })
-                    } else {
+                    } else { // if rank is maxed out
                         // say in chat that the user maxed out their discord ranking
                         let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
                         let command = '/me @' + event.user_login + ' you already maxed out your rank... You might want a refund.'
@@ -185,12 +196,23 @@ console.log(event, 'event')
                             rankName: rankNames[0],
                             rankColor: rankColors[0]
                         }}},
-                    {new: true, useFindAndModify: false}).then((response)=>{
-                        let rankSettings = response.rank.find((x)=> x.channel === event.broadcaster_user_login)
+                    {new: true, useFindAndModify: false}).then(async(response)=>{
+                        console.log(event)
+                        let rankSettings = response.rank.find((x)=> x.rewardID === event.reward.id)
                         let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
                         let command = '@' + event.user_login + ' Congrats! You have ranked up in Discord! You are now ranked: ' + rankNames[0]
                         userOpts.client.say(event.broadcaster_user_login, command)
-                        setDiscordRank(rankSettings.serverID, response.discord_ID, rankSettings.rankName, null)
+
+                        let userCheck = await checkGuildForUser(rankSettings.serverID, response.discord_ID)
+                        if(!userCheck){//if user is not in server, tell them to join server to gain rank
+                            let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
+                            let command = '@' + event.user_login + " Join the discord server ("+ rankSettings.serverName +") to gain your new rank."
+                            userOpts.client.say(event.broadcaster_user_login, command)
+                        } else {
+                            //give new rank
+                            setDiscordRank(rankSettings.serverID, response.discord_ID, rankSettings.rankName, null)
+                        }
+                        
                     })
                 }
 
@@ -215,8 +237,7 @@ console.log(event, 'event')
 
                 //send message in chat telling them where to connect their account
                 let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
-                console.log(userOpts)
-                let command = '@' + event.user_login + ' visit https://metamoderation.com/connect?' + event.user_login + ' to connect your discord account and gain your new Discord Rank!'
+                let command = '@' + event.user_login + ' visit https://metamoderation.com/connect to connect your discord account and gain your new Discord Rank!'
                 userOpts.client.say(event.broadcaster_user_login, command)
                 
             }

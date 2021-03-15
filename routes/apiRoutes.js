@@ -6,7 +6,7 @@ const { Users, FleamarketbotSettings, TwitchViewers } = require('../models/dbMod
 const bodyParser = require('body-parser');
 var jsonParser = bodyParser.json()
 const { modifyUsersArray, getUsersArray, client } = require('../apps/fleamarketbot/variables');
-const { setDiscordRank } = require('../discord/discordManager');
+const { setDiscordRank, userConnectHandler } = require('../discord/discordManager');
 
 require('dotenv').config()
 
@@ -110,7 +110,8 @@ router.post('/updateChannel/:token', jsonParser, verifyToken, (req, res) => {
 
 
 router.post('/connection', jsonParser, (req, res) => {
-
+console.log(req.body)
+console.log('/connection was hit')
   TwitchViewers.findOneAndUpdate({ twitch_ID: req.body.data.twitchID }, 
     {
       discord_ID: req.body.data.discordID, 
@@ -123,9 +124,14 @@ router.post('/connection', jsonParser, (req, res) => {
           
           if(result.rank.length > 0){
             result.rank.forEach((rank)=>{
-              setDiscordRank(rank.serverID, result.discord_ID, rank.rankName, null)
+
+              //check if user is already in server, if they are
+              userConnectHandler(rank.serverID, req.body.data.discordID, req.body.data.token, rank.rankName, null)
+
             })
           }
+
+          
 
           res.json(result)
         }
