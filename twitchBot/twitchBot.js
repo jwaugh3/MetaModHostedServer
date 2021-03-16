@@ -52,7 +52,7 @@ const twitchBotSetup = async (channel, accessToken) => {
         if(!user.mods.find((x)=>x.user_login === 'metamoderation')){
             client.say(channel, '/mod metamoderation')  
 
-            getChannelMods(twitch_ID, accessToken)
+            getChannelMods(user.twitch_ID, accessToken)
         }
     })
     }
@@ -88,11 +88,24 @@ const customTwitchBotSetup = async (channel, accessToken) =>{
         if (self) { return; } // Ignore messages from the bot
         if(msg.includes(";")){ return }
 
+        if(msg.startsWith('!connect')){
+            client.say(target, '@' + user.username + " You can start gaining discord ranks by connecting to here: https://metamoderation.com/connect")
+        }
+
         if(msg.startsWith('!rank')){
             TwitchViewers.findOne({twitch_username: user.username}).then((existingUser)=>{
-                console.log(target)
-                let rankSettings = existingUser.rank.find((x)=> '#' + x.channel === target)
-                client.say(target, '@' + user.username + " Your current discord rank is: " + rankSettings.rankName)
+                if(existingUser){
+                    let rankSettings = existingUser.rank.find((x)=> '#' + x.channel === target)
+                    if(rankSettings){
+                        client.say(target, '@' + user.username + " Your current discord rank is: " + rankSettings.rankName)
+                    } else {
+                        client.say(target, '@' + user.username + " You do not currently have a rank on this channel.")
+                    }
+                    
+                } else {
+                    client.say(target, '@' + user.username + " You are currently not connected to MetaMod to get a rank.")
+                }
+                
             })
         }
     }
