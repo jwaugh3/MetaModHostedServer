@@ -9,8 +9,8 @@ const { getChannelMods } = require('../twitchBot/twitchBot')
 const { optsArrayHandler } = require('../twitchBot/twitchBot')
 require('dotenv').config()
 
-baseURL = 'http://localhost:5000'
-frontURL = 'http://localhost:3001'
+baseURL = 'https://api.metamoderation.com'
+frontURL = 'https://metamoderation.com'
 
 TWITCH_AUTH_REDIRECT_URI = baseURL + '/auth/redirected'
 LOGGED_IN_URI = frontURL + '/authorize'

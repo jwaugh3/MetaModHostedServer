@@ -7,8 +7,8 @@ const eventSubHandler = require('../eventSub/eventSub')
 const { twitchBotSetup, getChannelMods } = require('../twitchBot/twitchBot')
 require('dotenv').config()
 
-baseURL = 'http://localhost:5000'
-frontURL = 'http://localhost:3001'
+baseURL = 'https://api.metamoderation.com'
+frontURL = 'https://metamoderation.com'
 
 TWITCH_AUTH_CONNECT_REDIRECT_URI = baseURL + '/connect/twitchRedirected'
 LOGGED_IN_URI = frontURL + '/authorize'
