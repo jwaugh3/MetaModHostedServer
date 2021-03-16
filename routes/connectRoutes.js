@@ -68,7 +68,7 @@ router.get('/twitchRedirected', (req, res) => {
 		} 
 
 		request(userOptions, (err, result, body) => {
-			console.log(JSON.parse(body))
+			// console.log(JSON.parse(body))
 			let userObject = JSON.parse(body).data 
 			let twitch_ID = userObject[0].id
 			
@@ -145,7 +145,7 @@ router.get('/discordRedirected', (req, res) => {
 		let bodyObject = JSON.parse(body)
 		var accessToken = bodyObject.access_token
 		var refreshToken = bodyObject.refresh_token;
-		console.log(bodyObject)
+		// console.log(bodyObject)
 
 		var headers = {
 			'Authorization': 'Bearer ' + accessToken,
@@ -158,7 +158,7 @@ router.get('/discordRedirected', (req, res) => {
 		} 
 
 		request(userOptions, (err, result, body) => {
-			console.log(JSON.parse(body))
+			// console.log(JSON.parse(body))
 			let userObject = JSON.parse(body)			
 						
 
@@ -213,7 +213,7 @@ router.get('/discordBotRedirected', (req, res) => {
 		let bodyObject = JSON.parse(body)
 		var accessToken = bodyObject.access_token
 		var refreshToken = bodyObject.refresh_token;
-		console.log(bodyObject)
+		// console.log(bodyObject)
 		let serverName = bodyObject.guild.name
 		let serverID = bodyObject.guild.id
 
@@ -229,7 +229,7 @@ router.get('/discordBotRedirected', (req, res) => {
 		} 
 
 		request(userOptions, (err, result, body) => {
-			console.log(JSON.parse(body))
+			// console.log(JSON.parse(body))
 			let userObject = JSON.parse(body)			
 						
 			res.redirect(LOGGED_IN_URI + '?discordID=' + userObject.id + '&discordLogin=' + userObject.username + '&discriminator=' + userObject.discriminator + '&serverName=' + serverName + '&serverID=' + serverID)

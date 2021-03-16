@@ -10,7 +10,7 @@ const { createDiscordRoles, deleteDiscordRoles } = require('../../discord/discor
 require('dotenv').config()
 
 router.get('/verifyJWT/:token', verifyToken, (req, res) => {
-    console.log(req.params.token)
+    // console.log(req.params.token)
     jwt.verify(req.params.token, process.env.JWT_SECRET, (err, authData)=>{
         if(err) {
             res.json({error: "failed"})
@@ -53,7 +53,7 @@ router.post('/event', jsonParser, (req, res)=>{
             };
             
             var dataString = JSON.stringify(req.body.data);
-            console.log(dataString)
+            // console.log(dataString)
             var options = {
                 url: `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${existingUser.twitch_ID}`,
                 method: 'POST',
@@ -65,8 +65,8 @@ router.post('/event', jsonParser, (req, res)=>{
                 request(options, (error, response)=>{
                     let data = JSON.parse(response.body)
                     if (!data.error) {
-                        console.log(data)
-                        console.log(data.data[0].max_per_stream_setting, data.data[0].max_per_user_per_stream_setting)
+                        // console.log(data)
+                        // console.log(data.data[0].max_per_stream_setting, data.data[0].max_per_user_per_stream_setting)
                         resolve(data)
                     } else {
                         console.log(data.error, 'error here')
@@ -156,7 +156,7 @@ router.post('/deleteCustomReward', jsonParser, (req, res)=>{
                     {new: true, useFindAndModify: false}
                 )
                 .then((result)=>{
-                    console.log(result)
+                    // console.log(result)
                 })
             }
         } else {
@@ -191,7 +191,7 @@ router.get('/getCustomReward/:channel/:manageable', (req, res)=>{
             })
 
         } else {
-                    console.log('getCustomReward Api endpoint errored out when getting user from db')
+            console.log('getCustomReward Api endpoint errored out when getting user from db')
         }
     })
 })
@@ -210,7 +210,7 @@ router.post('/updateCustomReward', jsonParser, (req, res)=>{
             };
 
             var dataString = JSON.stringify(req.body.data);
-            console.log(dataString)
+            // console.log(dataString)
             var options = {
                 url: `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${existingUser.twitch_ID}&id=${req.body.rewardID}`,
                 method: 'PATCH',
@@ -222,7 +222,7 @@ router.post('/updateCustomReward', jsonParser, (req, res)=>{
                 
                 request(options, (error, response)=>{
                     if (!JSON.parse(response.body).error) {
-                        console.log(response.body)
+                        // console.log(response.body)
                         resolve(response.body)
                     } else {
                         resolve(JSON.parse(response.body))
@@ -239,7 +239,7 @@ router.post('/updateCustomReward', jsonParser, (req, res)=>{
                         {new: true, useFindAndModify: false}
                     )
                     .then(async (res)=>{
-                        console.log(res, 'res')
+                        // console.log(res, 'res')
                         resolve(res)
                     })
                 })
@@ -255,7 +255,7 @@ router.post('/updateCustomReward', jsonParser, (req, res)=>{
 
 
 router.get('/getRewardSettings/:channel', (req, res)=>{
-console.log('got reward settings')
+// console.log('got reward settings')
     ChannelPointRewards.findOne({ channel: req.params.channel }, {_id: 0, __v: false}).then((existingUser)=>{
         if(existingUser){
             res.json(existingUser)
@@ -266,10 +266,10 @@ console.log('got reward settings')
 })
 
 router.get('/getRewardEntries/:channel/:rewardID', (req, res)=>{
-    console.log('got reward settings')
+    // console.log('got reward settings')
         ChannelPointRewards.findOne({ channel: req.params.channel, 'custom_rewards.reward_id': req.params.rewardID}, {_id: 0, __v: false}).then((existingReward)=>{
             if(existingReward){
-                console.log(existingReward)
+                // console.log(existingReward)
                 let rewardIndex = existingReward.custom_rewards.findIndex((x)=>x.reward_id === req.params.rewardID)
                 res.json({rewardID: existingReward.custom_rewards[rewardIndex].reward_id, userEntries: existingReward.custom_rewards[rewardIndex].redemptions})
             } else {

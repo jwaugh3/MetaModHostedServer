@@ -4,7 +4,7 @@ const { optsArrayHandler, customOptsArrayHandler } = require('../../twitchBot/tw
 const { setDiscordRank, checkGuildForUser } = require('../../discord/discordManager')
 
 const rewardRedemptionHandler = async (event) => {
-console.log(event, 'event')
+// console.log(event, 'event')
 
     let redeemedReward = await new Promise((resolve, reject)=>{
         ChannelPointRewards.findOne({channel: event.broadcaster_user_login}).then((result)=>{
@@ -13,14 +13,14 @@ console.log(event, 'event')
         })
     })
 
-    console.log(redeemedReward)
+    // console.log(redeemedReward)
 
 //Giveaway Redemption
     if(redeemedReward.reward_type === 'giveaway'){
 
         let currentRedemptions = redeemedReward.redemptions
         currentRedemptions.push(event.user_name)
-        console.log(currentRedemptions)
+        // console.log(currentRedemptions)
         ChannelPointRewards.findOneAndUpdate({ channel: event.broadcaster_user_login, 'custom_rewards.reward_id': event.reward.id }, //store username of redeemers
             {'$set' : {'custom_rewards.$.redemptions' : currentRedemptions}}, 
             {new: true, useFindAndModify: false})
@@ -38,12 +38,12 @@ console.log(event, 'event')
 
         let currentRedemptions = redeemedReward.timedRedemptions
         currentRedemptions.push({user: event.user_name, redeemedAt: new Date()})
-        console.log(currentRedemptions)
+        // console.log(currentRedemptions)
         ChannelPointRewards.findOneAndUpdate({ channel: event.broadcaster_user_login, 'custom_rewards.reward_id': event.reward.id }, //store username of redeemers
             {'$set' : {'custom_rewards.$.timedRedemptions' : currentRedemptions}}, 
             {new: true, useFindAndModify: false})
         .then((result)=>{
-            console.log(result)
+            // console.log(result)
             if(result){
                 //if successful
                 let userOpts = optsArrayHandler('get', event.broadcaster_user_login)
@@ -70,7 +70,7 @@ console.log(event, 'event')
                resolve(JSON.parse(response.body))
             })
         })
-        
+        // console.log(allUsers)
         let userTypes = JSON.parse(redeemedReward.reward_settings).eligible
         let numberOfChatters = JSON.parse(redeemedReward.reward_settings).numberOfChatters
         userTypes = userTypes.map((x)=>{return x.toLowerCase()})
@@ -84,7 +84,7 @@ console.log(event, 'event')
                 userPool.push(...allUsers.chatters[key])
             }
         }
-        console.log(allUsers, userPool)
+        // console.log(allUsers, userPool)
         let selectedUsers = []
 
         let metaBotOpts = customOptsArrayHandler('get')
@@ -118,7 +118,7 @@ console.log(event, 'event')
     if(redeemedReward.reward_type === 'discordRank'){
         TwitchViewers.findOne({twitch_username: event.user_login.toLowerCase()}).then((existingUser)=>{
             let rewardSettings = JSON.parse(redeemedReward.reward_settings)
-            console.log(rewardSettings, 'rewardSettings')
+            // console.log(rewardSettings, 'rewardSettings')
             let rankNames = rewardSettings.rankNames
             let rankColors = rewardSettings.rankColors
             let rankIDs = rewardSettings.rankIDs
@@ -132,12 +132,12 @@ console.log(event, 'event')
 
             if(existingUser){
                 let rankSettings = existingUser.rank.find((x)=>x.rewardID === event.reward.id)
-                console.log(rankSettings, 'ranksettings')
+                // console.log(rankSettings, 'ranksettings')
                 //check if they already are ranked for this reward id
                 //if ranked already, then rank up and update rank in discord
                 if(rankSettings){ //if rank already exists
                     let currentRankIndex = rewardSettings.rankNames.indexOf(rankSettings.rankName)
-                    console.log(currentRankIndex)
+                    // console.log(currentRankIndex)
                     let newRankIndex = currentRankIndex + 1
                     let newRankName = rewardSettings.rankNames[newRankIndex]
                     let newRankColor = rewardSettings.rankColors[newRankIndex]
@@ -147,11 +147,11 @@ console.log(event, 'event')
                             {'$set' : {'rank.$.rankName' : newRankName, 'rank.$.rankColor' : newRankColor}}, 
                             {new: true, useFindAndModify: false})
                         .then(async(result)=>{
-                            console.log(result)
+                            // console.log(result)
                             //if highest rank, tell in chat
                             //otherwise tell current rank
                             let rankSettings = result.rank.find((x)=> x.rewardID === event.reward.id)
-                            console.log(rankSettings)
+                            // console.log(rankSettings)
                             if(rankSettings.rankName === rewardSettings.rankNames[rewardSettings.rankNames.length - 1]){
                                 let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
                                 let command = '@' + event.user_login + ' You are now the highest rank possible in Discord. Congrats! Enjoy the clout!'
@@ -197,7 +197,7 @@ console.log(event, 'event')
                             rankColor: rankColors[0]
                         }}},
                     {new: true, useFindAndModify: false}).then(async(response)=>{
-                        console.log(event)
+                        // console.log(event)
                         let rankSettings = response.rank.find((x)=> x.rewardID === event.reward.id)
                         let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
                         let command = '@' + event.user_login + ' Congrats! You have ranked up in Discord! You are now ranked: ' + rankNames[0]

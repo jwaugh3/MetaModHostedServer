@@ -56,7 +56,7 @@ router.get('/redirected', (req, res) => {
       };
 
 	request(options, (err, result, body) => {
-		console.log('hit here')
+		// console.log('hit here')
 		let bodyObject = JSON.parse(body)
 		var accessToken = bodyObject.access_token
 		var refreshToken = bodyObject.refresh_token;
@@ -73,7 +73,7 @@ router.get('/redirected', (req, res) => {
 		} 
 
 		request(userOptions, (err, result, body) => {
-			console.log(JSON.parse(body))
+			// console.log(JSON.parse(body))
 			let userObject = JSON.parse(body).data 
 			let twitch_ID = userObject[0].id
 			
@@ -82,7 +82,7 @@ router.get('/redirected', (req, res) => {
 
 				if (existingUser) {
 					//user exists
-					console.log(existingUser)
+					// console.log(existingUser)
 					console.log('existing user:', existingUser.display_name);
 
 					getChannelMods(twitch_ID, accessToken)
@@ -149,7 +149,7 @@ router.get('/redirected', (req, res) => {
 							}
 
 							jwt.sign({userData}, process.env.JWT_SECRET, { expiresIn: '24d' }, (err, token) => {
-								console.log(token)
+								// console.log(token)
 								res.redirect(LOGGED_IN_URI + '?token=' + token);
 							  });
 						});

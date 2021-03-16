@@ -39,15 +39,15 @@ const createDiscordRoles = (settings) => {
                 reason: 'Rank created by MetaMod'
             })
         .then((result)=>{
-            console.log(result.name)
+            // console.log(result.name)
         })
     })
 }
 
 const deleteDiscordRoles = (settings) => {
-    console.log(settings)
+    // console.log(settings)
     settings.rankIDs.forEach((id, index)=>{
-        console.log(settings.rankNames[index])
+        // console.log(settings.rankNames[index])
         client.guilds.cache.get(settings.serverID).roles.cache.find((x)=>x.name === settings.rankNames[index]).delete()
     })
 }
@@ -67,7 +67,7 @@ const checkGuildForUser = async(serverID, userID) => {
 
     let userCheck = await new Promise((resolve, reject)=>{
         request.get(userOptions, (error, response) => {
-            console.log(JSON.parse(response.body))
+            // console.log(JSON.parse(response.body))
             let userData = JSON.parse(response.body)
             if(userData.message){
                 resolve(false)
@@ -93,7 +93,7 @@ const getGuildRoleID = async(serverID, rank) => {
     } 
     let roleID = await new Promise((resolve, reject)=>{
         request.get(userOptions, (err, result, body) => {
-            console.log(JSON.parse(body))
+            // console.log(JSON.parse(body))
             let roles = JSON.parse(body)
     
             let roleIndex = roles.findIndex((x)=> x.name === rank)
@@ -121,7 +121,7 @@ const addUserToGuild = async(serverID, userID, accessToken) => {
             if(body.message){
                 resolve('error')
             } else {
-                console.log(body, 'here')
+                // console.log(body, 'here')
                 resolve('success')
             }
         })
@@ -133,14 +133,14 @@ const addUserToGuild = async(serverID, userID, accessToken) => {
 const userConnectHandler = async (serverID, userID, accessToken, rank, previousRank) => {
 
     let userCheck = await checkGuildForUser(serverID, userID)
-    console.log(userCheck)
+    // console.log(userCheck)
 
     if(!userCheck){//if user is not in server, add them
         //get role ID for user
         let roleID = await getGuildRoleID(serverID, rank)
         
         let joinStatus = await addUserToGuild(serverID, userID, accessToken, roleID)
-        console.log(joinStatus)
+        // console.log(joinStatus)
     } else {
         setDiscordRank(serverID, userID, rank, previousRank)
     }
@@ -148,23 +148,17 @@ const userConnectHandler = async (serverID, userID, accessToken, rank, previousR
 
 client.on('ready', ()=>{
     // userConnectHandler('776560072867446795', '820264052911243275', 'RFghPZek7svu9tpCBHe82TbsCxM2vg', 'Level 1 - Bronze')
-    console.log('im ready')
+    // console.log('im ready')
 })
 
 //run when someone joins the server to check for rank and award rank
 client.on('guildMemberAdd', (member)=>{
     TwitchViewers.findOne({discord_ID: member.user.id}).then((user)=>{
-        console.log(user)
         let rankIndex = user.rank.findIndex((x)=> x.serverID === member.guild.id)
-        console.log(rankIndex)
-console.log(member.id)
-        console.log(user.rank[rankIndex])
         let rankData = user.rank[rankIndex]
 
         setDiscordRank(member.guild.id, user.discord_ID, rankData.rankName, null)
     })
-    // setDiscordRank(serverID, userID, rank, previousRank)
-    console.log(member.guild.id, 'member here')
 })
 
 client.login(process.env.DISCORD_BOT_TOKEN)

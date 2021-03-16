@@ -10,7 +10,7 @@ const app = express();
 
 const clientID = process.env.TWITCH_CLIENT_ID
 const clientSecret = process.env.TWITCH_CLIENT_SECRET
-const callbackURL = 'https://48d99284eec0.ngrok.io'
+const callbackURL = 'https://api.metamoderation.com'
 
 
 
@@ -31,7 +31,7 @@ const getAppAccessToken = async () => {
     let appAccessToken = await new Promise((resolve, reject) => {
 
         request(tokenOptions, (error, response) => {
-            console.log(response.body)
+            // console.log(response.body)
             if (!error) {
                 resolve(JSON.parse(response.body).access_token)
             } else {
@@ -39,7 +39,7 @@ const getAppAccessToken = async () => {
             }
         })
     })
-    console.log(appAccessToken)
+    // console.log(appAccessToken)
     return appAccessToken
 }
 
