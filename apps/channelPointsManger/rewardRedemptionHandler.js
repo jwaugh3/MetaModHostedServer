@@ -1,4 +1,5 @@
 const request = require("request")
+const schedule = require('node-schedule')
 const { ChannelPointRewards, TwitchViewers } = require("../../models/dbModels")
 const { optsArrayHandler, customOptsArrayHandler } = require('../../twitchBot/twitchBot')
 const { setDiscordRank, checkGuildForUser } = require('../../discord/discordManager')
@@ -289,14 +290,17 @@ console.log('we ran it at: ', new Date().getHours())
 
 
 const runEveryFullHours = (callbackFn) => {
-    const Hour = 60 * 60 * 1000;
-    const currentDate = new Date();
-    const firstCall =  Hour - (currentDate.getMinutes() * 60 + currentDate.getSeconds()) * 1000 + currentDate.getMilliseconds();
+    // const Hour = 60 * 60 * 1000;
+    // const currentDate = new Date();
+    // const firstCall =  Hour - (currentDate.getMinutes() * 60 + currentDate.getSeconds()) * 1000 + currentDate.getMilliseconds();
 
-    setTimeout(() => {
+    // setTimeout(() => {
+    //     callbackFn();
+    //     setInterval(callbackFn, Hour);
+    // }, firstCall);
+    const job = schedule.scheduleJob('1 * * * *', function(){
         callbackFn();
-        setInterval(callbackFn, Hour);
-    }, firstCall);
+      });
 };
 
 runEveryFullHours(redemptionTimer)
