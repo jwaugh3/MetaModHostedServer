@@ -18,7 +18,7 @@ require('dotenv').config()
 
 //   eventSubHandler('30978675', 'delete', null) //for testing purposes
 //  eventSubHandler('30978675', 'create', 'channel.channel_points_custom_reward_redemption.add') //for testing purposes 
- eventSubHandler(null, 'get', null)
+ //eventSubHandler(null, 'get', null)
 
 twitchBotRestart()
 customTwitchBotRestart()

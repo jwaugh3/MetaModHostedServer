@@ -14,14 +14,13 @@ const rewardRedemptionHandler = async (event) => {
         })
     })
 
-    // console.log(redeemedReward)
 
 //Giveaway Redemption
     if(redeemedReward.reward_type === 'giveaway'){
 
         let currentRedemptions = redeemedReward.redemptions
         currentRedemptions.push(event.user_name)
-        // console.log(currentRedemptions)
+
         ChannelPointRewards.findOneAndUpdate({ channel: event.broadcaster_user_login, 'custom_rewards.reward_id': event.reward.id }, //store username of redeemers
             {'$set' : {'custom_rewards.$.redemptions' : currentRedemptions}}, 
             {new: true, useFindAndModify: false})
@@ -35,28 +34,29 @@ const rewardRedemptionHandler = async (event) => {
     }
 
 //VIP Redemption
-    if(redeemedReward.reward_type === 'vip'){
+if(redeemedReward.reward_type === 'vip'){
 
-        let currentRedemptions = redeemedReward.timedRedemptions
-        currentRedemptions.push({user: event.user_name, redeemedAt: new Date()})
-        // console.log(currentRedemptions)
-        ChannelPointRewards.findOneAndUpdate({ channel: event.broadcaster_user_login, 'custom_rewards.reward_id': event.reward.id }, //store username of redeemers
-            {'$set' : {'custom_rewards.$.timedRedemptions' : currentRedemptions}}, 
-            {new: true, useFindAndModify: false})
-        .then((result)=>{
-            // console.log(result)
-            if(result){
-                //if successful
-                let userOpts = optsArrayHandler('get', event.broadcaster_user_login)
-                let command = '/vip ' + event.user_login 
-                userOpts.client.say(userOpts.opts.identity.username, command)
-                
+    let currentRedemptions = redeemedReward.timedRedemptions
+    currentRedemptions.push({user: event.user_name, redeemedAt: new Date()})
 
-            } else {
-                console.log('createCustomRewards Api endpoint errored out when getting user from db')
-            }
-        })
-    }
+    ChannelPointRewards.findOneAndUpdate({ channel: event.broadcaster_user_login, 'custom_rewards.reward_id': event.reward.id }, //store username of redeemers
+        {'$set' : {'custom_rewards.$.timedRedemptions' : currentRedemptions}}, 
+        {new: true, useFindAndModify: false})
+    .then((result)=>{
+        // console.log(result)
+        if(result){
+            //if successful
+            let userOpts = optsArrayHandler('get', event.broadcaster_user_login)
+            let command = '/vip ' + event.user_login 
+            userOpts.client.say(userOpts.opts.identity.username, command)
+            
+
+        } else {
+            console.log('createCustomRewards Api endpoint errored out when getting user from db')
+        }
+    })
+}
+
 
 //Timeout Redemption
     if(redeemedReward.reward_type === 'timeout'){
@@ -71,7 +71,7 @@ const rewardRedemptionHandler = async (event) => {
                resolve(JSON.parse(response.body))
             })
         })
-        // console.log(allUsers)
+
         let userTypes = JSON.parse(redeemedReward.reward_settings).eligible
         let numberOfChatters = JSON.parse(redeemedReward.reward_settings).numberOfChatters
         userTypes = userTypes.map((x)=>{return x.toLowerCase()})
@@ -85,7 +85,7 @@ const rewardRedemptionHandler = async (event) => {
                 userPool.push(...allUsers.chatters[key])
             }
         }
-        // console.log(allUsers, userPool)
+
         let selectedUsers = []
 
         let metaBotOpts = customOptsArrayHandler('get')
@@ -119,7 +119,7 @@ const rewardRedemptionHandler = async (event) => {
     if(redeemedReward.reward_type === 'discordRank'){
         TwitchViewers.findOne({twitch_username: event.user_login.toLowerCase()}).then((existingUser)=>{
             let rewardSettings = JSON.parse(redeemedReward.reward_settings)
-            // console.log(rewardSettings, 'rewardSettings')
+
             let rankNames = rewardSettings.rankNames
             let rankColors = rewardSettings.rankColors
             let rankIDs = rewardSettings.rankIDs
@@ -133,7 +133,7 @@ const rewardRedemptionHandler = async (event) => {
 
             if(existingUser){
                 let rankSettings = existingUser.rank.find((x)=>x.rewardID === event.reward.id)
-                // console.log(rankSettings, 'ranksettings')
+
                 //check if they already are ranked for this reward id
                 //if ranked already, then rank up and update rank in discord
                 if(rankSettings){ //if rank already exists
@@ -148,7 +148,7 @@ const rewardRedemptionHandler = async (event) => {
                             {'$set' : {'rank.$.rankName' : newRankName, 'rank.$.rankColor' : newRankColor}}, 
                             {new: true, useFindAndModify: false})
                         .then(async(result)=>{
-                            // console.log(result)
+
                             //if highest rank, tell in chat
                             //otherwise tell current rank
                             let rankSettings = result.rank.find((x)=> x.rewardID === event.reward.id)
@@ -198,7 +198,7 @@ const rewardRedemptionHandler = async (event) => {
                             rankColor: rankColors[0]
                         }}},
                     {new: true, useFindAndModify: false}).then(async(response)=>{
-                        // console.log(event)
+
                         let rankSettings = response.rank.find((x)=> x.rewardID === event.reward.id)
                         let userOpts = customOptsArrayHandler('get', event.broadcaster_user_login)
                         let command = '@' + event.user_login + ' Congrats! You have ranked up in Discord! You are now ranked: ' + rankNames[0]
@@ -264,7 +264,7 @@ console.log('we ran it at: ', new Date().getHours())
                             actionInfo.reward_type = reward.reward_type
                             actionInfo.user = redemption.user
                             actionInfo.redeemedAt = redemption.redeemedAt
-    
+                            console.log(actionInfo)
                             actionsToExecute.push(actionInfo)
                         }
                     })
@@ -290,14 +290,6 @@ console.log('we ran it at: ', new Date().getHours())
 
 
 const runEveryFullHours = (callbackFn) => {
-    // const Hour = 60 * 60 * 1000;
-    // const currentDate = new Date();
-    // const firstCall =  Hour - (currentDate.getMinutes() * 60 + currentDate.getSeconds()) * 1000 + currentDate.getMilliseconds();
-
-    // setTimeout(() => {
-    //     callbackFn();
-    //     setInterval(callbackFn, Hour);
-    // }, firstCall);
     const job = schedule.scheduleJob('1 * * * *', function(){
         callbackFn();
       });

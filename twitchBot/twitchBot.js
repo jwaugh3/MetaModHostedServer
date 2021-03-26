@@ -21,7 +21,7 @@ const defaultOpts = {
 
 const twitchBotSetup = async (channel, accessToken) => {
 
-    var opts = defaultOpts
+    var opts = JSON.parse(JSON.stringify(defaultOpts))
     opts.identity.username = channel
     opts.identity.password = 'oauth:' + accessToken
     opts.channels[0] = '#' + channel
@@ -58,6 +58,7 @@ const twitchBotSetup = async (channel, accessToken) => {
     }
 
     optsArray.push({opts, client})
+    console.log('default',defaultOpts)
 }
 
 const optsArrayHandler = (action, channel) => {
@@ -70,7 +71,7 @@ const optsArrayHandler = (action, channel) => {
 }
 
 const customTwitchBotSetup = async (channel, accessToken) =>{
-    var opts = defaultOpts
+    var opts = JSON.parse(JSON.stringify(defaultOpts))
     opts.identity.username = 'metamoderation'
     opts.identity.password = 'oauth:' + accessToken
     opts.channels[0] = '#' + channel
@@ -161,39 +162,36 @@ const twitchBotRestart = async () => {
     //bot initialization
     let results = await Users.find({}, {_id: 0, __v: 0})
 
-    var counter = 0
-    var x = setInterval( async ()=>{
-        let tokenData = await generateNewAccessToken(results[counter].refresh_token)
-        let accessToken = JSON.parse(tokenData).access_token
-        // console.log(accessToken, results[counter])
-        twitchBotSetup(results[counter].login_username, accessToken)
+    await results.forEach(async(user, index)=>{
 
-        if(counter === results.length-1){
-            clearInterval(x)
-        }
-        counter ++
-    }, 2000)
+        let tokenData = await generateNewAccessToken(user.refresh_token).then(async(result)=>{
+            let accessToken = JSON.parse(result).access_token
 
+            let status = await twitchBotSetup(user.login_username, accessToken)
+        })
+    
+    })
+    
+    setTimeout(async()=>{ 
+        optsArray.forEach((res)=>{
+            console.log(res.opts)
+        })
+    }, 10000)
 }
 
 const customTwitchBotRestart = async () => {
-    //bot initialization
+    // //bot initialization
     let results = await Users.find({}, {_id: 0, __v: 0})
 
-    var counter = 0
-    var x = setInterval( async ()=>{
+    await results.forEach(async(user, index)=>{
         let accessToken = '4tw1v563eyc5760b0yoill7hdr9awl'
-        let channel = results[counter].login_username
-        console.log(channel)
-        customTwitchBotSetup(channel, accessToken)
+        let channel = user.login_username
+        await customTwitchBotSetup(channel, accessToken)
+    })
 
-        if(counter === results.length-1){
-            clearInterval(x)
-        }
-        counter ++
-    }, 2000)
-
-
+    setTimeout(async()=>{ 
+        console.log(customOptsArray.opts)
+    }, 10000)
 }
 
 module.exports = {

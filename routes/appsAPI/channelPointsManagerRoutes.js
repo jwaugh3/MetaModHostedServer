@@ -6,6 +6,7 @@ var jsonParser = bodyParser.json()
 const { Users, ChannelPointRewards, TwitchViewers } = require('../../models/dbModels');
 const verifyToken = require('../../jwt/jwt');
 const rewardRedemptionHandler = require('../../apps/channelPointsManger/rewardRedemptionHandler')
+const { customOptsArrayHandler } = require('../../twitchBot/twitchBot')
 const { createDiscordRoles, deleteDiscordRoles } = require('../../discord/discordManager')
 require('dotenv').config()
 
@@ -279,17 +280,19 @@ router.get('/getRewardEntries/:channel/:rewardID', (req, res)=>{
     })
 
 router.get('/getWinners/:channel/:rewardID', async(req, res)=>{
-    
+
     let winners = await new Promise((resolve, reject)=>{
         ChannelPointRewards.findOne({ channel: req.params.channel, 'custom_rewards.reward_id': req.params.rewardID}, {_id: 0, __v: false}).then(async(res)=>{
             if(res){
-                if(res.custom_rewards[0].winners.length > 0){
-                    resolve(res.custom_rewards[0].winners)
+console.log(res)
+        let rewardIndex = res.custom_rewards.findIndex((x)=> x.reward_id === req.params.rewardID)
+                if(res.custom_rewards[rewardIndex].winners.length > 0){
+                    resolve(res.custom_rewards[rewardIndex].winners)
                 } else {
-                    let redemptions = res.custom_rewards[0].redemptions
+                    let redemptions = res.custom_rewards[rewardIndex].redemptions
                     let setWinners = []
-                    let winnerCount = JSON.parse(res.custom_rewards[0].reward_settings).winnerCount
-                    giveawayStatus = JSON.parse(res.custom_rewards[0].reward_settings).completed
+                    let winnerCount = JSON.parse(res.custom_rewards[rewardIndex].reward_settings).winnerCount
+                    giveawayStatus = JSON.parse(res.custom_rewards[rewardIndex].reward_settings).completed
 
                     if(giveawayStatus === true && winnerCount < redemptions.length){
                         for(let x=0; x<winnerCount && setWinners !== winnerCount; x++){
@@ -305,7 +308,26 @@ router.get('/getWinners/:channel/:rewardID', async(req, res)=>{
                             ChannelPointRewards.findOneAndUpdate({ channel: req.params.channel, 'custom_rewards.reward_id': req.params.rewardID }, 
                                 {'$set' : {'custom_rewards.$.winners' : setWinners}}, 
                                 {new: true, useFindAndModify: false}
-                            ).then((res)=>resolve(res))
+                            ).then((res)=>{
+
+                                let winnersIndex = res.custom_rewards.findIndex((x)=> x.reward_id === req.params.rewardID)
+                                let winnersArray = res.custom_rewards[winnersIndex].winners
+                                if(winnersArray.length > 2){
+                                    let listedUsers = winnersArray
+                                    let last = listedUsers.pop()
+                                    resultList = listedUsers.join(', ') + ' and ' + last
+                                } else if(winnersArray.length === 2){
+                                    resultList = winnersArray[0] + ' and ' + winnersArray[1]
+                                } else {
+                                    resultList = winnersArray
+                                }
+
+                                let userOpts = customOptsArrayHandler('get', req.params.channel)
+                                let command = 'The Giveaway has ended and the winners are: ' + resultList + '. Please respond in chat to claim your prize.'
+                                userOpts.client.say(event.broadcaster_user_login, command)
+
+                                resolve(res)
+                            })
                         })
 
                         resolve(completedGiveaway.custom_rewards[0].winners)
@@ -320,6 +342,7 @@ router.get('/getWinners/:channel/:rewardID', async(req, res)=>{
 
     res.json(winners)
 })
+    
 
 
 router.get('/reroll/:channel/:rewardID/:user', async(req, res)=>{
@@ -327,10 +350,10 @@ router.get('/reroll/:channel/:rewardID/:user', async(req, res)=>{
     let winners = await new Promise((resolve, reject)=>{
         ChannelPointRewards.findOne({ channel: req.params.channel, 'custom_rewards.reward_id': req.params.rewardID}, {_id: 0, __v: false}).then(async(res)=>{
             if(res){
-                
-                let redemptions = res.custom_rewards[0].redemptions
-                let setWinners = res.custom_rewards[0].winners
-                giveawayStatus = JSON.parse(res.custom_rewards[0].reward_settings).completed
+                let rewardIndex = res.custom_rewards.findIndex((x)=> x.reward_id === req.params.rewardID)
+                let redemptions = res.custom_rewards[rewardIndex].redemptions
+                let setWinners = res.custom_rewards[rewardIndex].winners
+                giveawayStatus = JSON.parse(res.custom_rewards[rewardIndex].reward_settings).completed
 
                 let index = setWinners.findIndex((x)=>x === req.params.user)
                 let rerolled = redemptions[Math.floor(Math.random() * redemptions.length)]
@@ -346,7 +369,7 @@ router.get('/reroll/:channel/:rewardID/:user', async(req, res)=>{
                     ).then((res)=>resolve(res))
                 })
 
-                resolve(completedGiveaway.custom_rewards[0].winners)
+                resolve(completedGiveaway.custom_rewards[rewardIndex].winners)
                 
                 
             } else {
