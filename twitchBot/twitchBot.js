@@ -58,7 +58,6 @@ const twitchBotSetup = async (channel, accessToken) => {
     }
 
     optsArray.push({opts, client})
-    console.log('default',defaultOpts)
 }
 
 const optsArrayHandler = (action, channel) => {
@@ -171,12 +170,6 @@ const twitchBotRestart = async () => {
         })
     
     })
-    
-    setTimeout(async()=>{ 
-        optsArray.forEach((res)=>{
-            console.log(res.opts)
-        })
-    }, 10000)
 }
 
 const customTwitchBotRestart = async () => {
@@ -188,10 +181,6 @@ const customTwitchBotRestart = async () => {
         let channel = user.login_username
         await customTwitchBotSetup(channel, accessToken)
     })
-
-    setTimeout(async()=>{ 
-        console.log(customOptsArray.opts)
-    }, 10000)
 }
 
 module.exports = {

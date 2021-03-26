@@ -4,14 +4,6 @@ const cors = require('cors');
 const { authRoutes } = require('./routes/authRoutes');
 const { connectRoutes } = require('./routes/connectRoutes')
 const { apiRoutes } = require('./routes/apiRoutes');
-const twitchBot = require('./twitchBot/twitchBot');
-const discordManager = require('./discord/discordManager')
-// const { patreonRoutes } = require('./routes/patreonRoutes');
-// const fleamarketbot = require('./apps/fleamarketbot/fleamarketbot');
-// const fleamarketbotSetup = require('./apps/fleamarketbot/fleamarketbotSetup');
-const bodyParser = require('body-parser');
-const jsonParser = bodyParser.json()
-const eventSubHandler = require('./eventSub/eventSub')
 const { channelPointsManagerRoutes } = require('./routes/appsAPI/channelPointsManagerRoutes');
 const { twitchBotRestart, customTwitchBotRestart } = require('./twitchBot/twitchBot')
 require('dotenv').config()

@@ -24,7 +24,7 @@ router.get('/login', (req, res) => {
 				client_id: process.env.TWITCH_CLIENT_ID, 
                 redirect_uri: TWITCH_AUTH_REDIRECT_URI,
                 response_type: 'code',
-				scope: 'chat:read chat:edit channel_commercial user:read:email moderation:read channel:moderate channel:manage:redemptions channel:read:redemptions',
+				scope: 'chat:read chat:edit user:read:email moderation:read channel:moderate channel:manage:redemptions channel:read:redemptions',
                 state: process.env.TWITCH_AUTH_STATE
 			})
 	);
@@ -212,23 +212,6 @@ generateNewAccessToken = async (refreshToken) => {
 		});
 	});
 };
-
-// generateUserToken = () => {
-// 	const genUserToken = randomString.generate(32);
-// 	return genUserToken;
-// };
-
-// encryptUserToken = (userToken) => {
-// 	let encryptedToken = cryptoJS.AES.encrypt(userToken, process.env.COOKIE_KEY).toString();
-// 	return encryptedToken;
-// };
-
-// decryptUserToken = (encryptedToken) => {
-// 	let bytes = cryptoJS.AES.decrypt(encryptedToken, process.env.COOKIE_KEY);
-// 	let userToken = bytes.toString(cryptoJS.enc.Utf8);
-// 	return userToken;
-// };
-
 
 
 module.exports = {
