@@ -177,7 +177,7 @@ const customTwitchBotRestart = async () => {
     let results = await Users.find({}, {_id: 0, __v: 0})
 
     await results.forEach(async(user, index)=>{
-        let accessToken = '4tw1v563eyc5760b0yoill7hdr9awl'
+        let accessToken = '' //add your own twitch bot oauth token here
         let channel = user.login_username
         await customTwitchBotSetup(channel, accessToken)
     })
