@@ -8,10 +8,6 @@ const { channelPointsManagerRoutes } = require('./routes/appsAPI/channelPointsMa
 const { twitchBotRestart, customTwitchBotRestart } = require('./twitchBot/twitchBot')
 require('dotenv').config()
 
-//   eventSubHandler('30978675', 'delete', null) //for testing purposes
-//  eventSubHandler('30978675', 'create', 'channel.channel_points_custom_reward_redemption.add') //for testing purposes 
- //eventSubHandler(null, 'get', null)
-
 twitchBotRestart()
 customTwitchBotRestart()
 
@@ -40,7 +36,6 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
 //authorization route
 app.use('/auth', authRoutes);
 app.use('/connect', connectRoutes)
-// app.use('/patreon', patreonRoutes)
 app.use('/api', apiRoutes)
 app.use('/channelPointsManager', channelPointsManagerRoutes)
 
